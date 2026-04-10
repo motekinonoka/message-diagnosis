@@ -276,7 +276,7 @@
         <span class="eyebrow">PMS / OTA MESSAGE CHECK</span>
         <h1>自動送信メッセージ診断</h1>
         <p class="lead">
-          Airhost・Airbnb・Bookingの連携状況を選ぶと、どのプラットフォームにどの自動送信メッセージを登録すべきかを判定します。
+          Airhost・Airbnb・Booking.comの連携状況を選ぶと、どのプラットフォームにどの自動送信メッセージを登録すべきかを判定します。
           ルールが未定義の組み合わせは、誤案内を避けるため「相談してください」と表示します。
         </p>
       </section>
@@ -335,7 +335,7 @@
           </form>
 
           <p class="note">
-            判定対象は現時点で Airhost・Airbnb・Booking のみです。その他OTAはまだ考慮していません。
+            判定対象は現時点で Airhost・Airbnb・Booking.com のみです。その他OTAはまだ考慮していません。
           </p>
         </div>
 
@@ -448,7 +448,7 @@
         if (airhost === "no" && airbnb === "yes" && booking === "yes") {
           return {
             type: "consult",
-            reason: "Airhostなし・Airbnbあり・Bookingありの組み合わせは、現時点で登録ルールが未定義です。",
+            reason: "Airhostなし・Airbnbあり・Booking.comありの組み合わせは、現時点で登録ルールが未定義です。",
           };
         }
 
@@ -465,7 +465,7 @@
         if (airhost === "yes" && airbnb === "yes" && booking === "yes") {
           return {
             type: "result",
-            summary: "Airhost・Airbnb・Bookingがそろっているため、AirbnbとBookingの両方に登録が必要です。",
+            summary: "Airhost・Airbnb・Booking.comがそろっているため、AirbnbとBooking.comの両方に登録が必要です。",
             platforms: [
               { name: "Airbnb", messages: AIRBNB_MESSAGES_WITH_AIRHOST },
               { name: "Booking.com", messages: BOOKING_MESSAGES },
@@ -476,7 +476,7 @@
         if (airhost === "yes" && airbnb === "no" && booking === "yes") {
           return {
             type: "result",
-            summary: "Airhostあり・Airbnbなし・Bookingありのため、Booking.com上で2つの自動送信メッセージを登録します。",
+            summary: "Airhostあり・Airbnbなし・Booking.comありのため、Booking.com上で2つの自動送信メッセージを登録します。",
             platforms: [
               { name: "Booking.com", messages: BOOKING_MESSAGES },
             ],
@@ -486,7 +486,7 @@
         if (airhost === "yes" && airbnb === "no" && booking === "no") {
           return {
             type: "consult",
-            reason: "Airhostあり・Airbnbなし・Bookingなしの組み合わせは、現時点で登録ルールが未定義です。",
+            reason: "Airhostあり・Airbnbなし・Booking.comなしの組み合わせは、現時点で登録ルールが未定義です。",
           };
         }
 
