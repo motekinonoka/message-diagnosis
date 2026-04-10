@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PMS・OTA自動送信メッセージ診断</title>
+    <style>
+      :root {
+        --bg: #f4efe6;
+        --panel: rgba(255, 251, 245, 0.92);
+        --panel-strong: #fff8ef;
+        --text: #29211a;
+        --muted: #6a5c4f;
+        --accent: #b43954;
+        --accent-deep: #84273b;
+        --line: rgba(101, 36, 52, 0.16);
+        --ok-bg: #f5e2e7;
+        --warn-bg: #f8e4d8;
+        --shadow: 0 24px 70px rgba(101, 36, 52, 0.14);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Hiragino Sans", "Yu Gothic", "Noto Sans JP", sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(circle at top left, rgba(180, 57, 84, 0.18), transparent 28%),
+          radial-gradient(circle at bottom right, rgba(132, 39, 59, 0.16), transparent 24%),
+          linear-gradient(180deg, #f8f2e9 0%, var(--bg) 100%);
+        min-height: 100vh;
+      }
+
+      .shell {
+        width: min(980px, calc(100% - 32px));
+        margin: 32px auto;
+        padding: 24px;
+      }
+
+      .hero,
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 28px;
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(8px);
+      }
+
+      .hero {
+        padding: 32px;
+        margin-bottom: 20px;
+      }
+
+      .eyebrow {
+        display: inline-block;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(180, 57, 84, 0.12);
+        color: var(--accent-deep);
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        font-size: 0.82rem;
+      }
+
+      h1 {
+        margin: 18px 0 12px;
+        font-size: clamp(1.9rem, 4vw, 3.3rem);
+        line-height: 1.1;
+      }
+
+      .lead {
+        margin: 0;
+        color: var(--muted);
+        font-size: 1rem;
+        line-height: 1.8;
+        max-width: 720px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 1.05fr 0.95fr;
+        gap: 20px;
+      }
+
+      .panel {
+        padding: 24px;
+      }
+
+      .panel h2 {
+        margin: 0 0 16px;
+        font-size: 1.2rem;
+      }
+
+      .question {
+        padding: 18px;
+        border-radius: 20px;
+        border: 1px solid var(--line);
+        background: var(--panel-strong);
+      }
+
+      .question + .question {
+        margin-top: 14px;
+      }
+
+      .question.hidden {
+        display: none;
+      }
+
+      .question-title {
+        margin: 0 0 12px;
+        font-weight: 700;
+      }
+
+      .choices {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .choice {
+        position: relative;
+      }
+
+      .choice input {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .choice span {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 88px;
+        padding: 11px 16px;
+        border-radius: 999px;
+        border: 1px solid rgba(132, 39, 59, 0.24);
+        color: var(--accent-deep);
+        background: white;
+        cursor: pointer;
+        transition: transform 160ms ease, background 160ms ease, color 160ms ease, border-color 160ms ease;
+      }
+
+      .choice input:checked + span {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fffaf5;
+        transform: translateY(-1px);
+      }
+
+      .actions {
+        margin-top: 18px;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      button {
+        appearance: none;
+        border: 0;
+        border-radius: 999px;
+        padding: 12px 18px;
+        font: inherit;
+        cursor: pointer;
+      }
+
+      .primary {
+        background: linear-gradient(135deg, #c35a73, #b43954 45%, #84273b);
+        color: #fff;
+      }
+
+      .secondary {
+        background: #f3e2e7;
+        color: var(--accent-deep);
+      }
+
+      .result-card {
+        min-height: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .result-status {
+        display: inline-flex;
+        align-items: center;
+        align-self: flex-start;
+        margin-bottom: 14px;
+        padding: 7px 12px;
+        border-radius: 999px;
+        background: var(--ok-bg);
+        color: var(--accent-deep);
+        font-weight: 700;
+        font-size: 0.88rem;
+      }
+
+      .result-status.warn {
+        background: var(--warn-bg);
+      }
+
+      .summary {
+        margin: 0 0 18px;
+        line-height: 1.8;
+        color: var(--muted);
+      }
+
+      .platform {
+        padding: 16px;
+        border-radius: 18px;
+        background: #fffdf9;
+        border: 1px solid var(--line);
+      }
+
+      .platform + .platform {
+        margin-top: 12px;
+      }
+
+      .platform h3 {
+        margin: 0 0 10px;
+        font-size: 1rem;
+      }
+
+      ul {
+        margin: 0;
+        padding-left: 18px;
+      }
+
+      li + li {
+        margin-top: 6px;
+      }
+
+      .empty {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.8;
+      }
+
+      .note {
+        margin-top: 18px;
+        padding: 14px 16px;
+        border-radius: 16px;
+        background: #f7ebee;
+        color: var(--muted);
+        font-size: 0.95rem;
+        line-height: 1.7;
+      }
+
+      @media (max-width: 820px) {
+        .shell {
+          width: min(100% - 20px, 980px);
+          margin: 20px auto;
+          padding: 0;
+        }
+
+        .hero,
+        .panel {
+          border-radius: 22px;
+        }
+
+        .grid {
+          grid-template-columns: 1fr;
+        }
+
+        .hero,
+        .panel {
+          padding: 20px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <span class="eyebrow">PMS / OTA MESSAGE CHECK</span>
+        <h1>自動送信メッセージ診断</h1>
+        <p class="lead">
+          Airhost・Airbnb・Bookingの連携状況を選ぶと、どのプラットフォームにどの自動送信メッセージを登録すべきかを判定します。
+          ルールが未定義の組み合わせは、誤案内を避けるため「相談してください」と表示します。
+        </p>
+      </section>
+
+      <section class="grid">
+        <div class="panel">
+          <h2>連携状況を選択</h2>
+
+          <form id="diagnosisForm">
+            <div class="question" id="airhostQuestion">
+              <p class="question-title">1. Airhostに連携していますか？</p>
+              <div class="choices">
+                <label class="choice">
+                  <input type="radio" name="airhost" value="yes" />
+                  <span>はい</span>
+                </label>
+                <label class="choice">
+                  <input type="radio" name="airhost" value="no" />
+                  <span>いいえ</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="question hidden" id="airbnbQuestion">
+              <p class="question-title">2. Airbnbに連携していますか？</p>
+              <div class="choices">
+                <label class="choice">
+                  <input type="radio" name="airbnb" value="yes" />
+                  <span>はい</span>
+                </label>
+                <label class="choice">
+                  <input type="radio" name="airbnb" value="no" />
+                  <span>いいえ</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="question hidden" id="bookingQuestion">
+              <p class="question-title">3. Booking.comに登録していますか？</p>
+              <div class="choices">
+                <label class="choice">
+                  <input type="radio" name="booking" value="yes" />
+                  <span>はい</span>
+                </label>
+                <label class="choice">
+                  <input type="radio" name="booking" value="no" />
+                  <span>いいえ</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="actions">
+              <button type="submit" class="primary">診断する</button>
+              <button type="button" class="secondary" id="resetButton">リセット</button>
+            </div>
+          </form>
+
+          <p class="note">
+            判定対象は現時点で Airhost・Airbnb・Booking のみです。その他OTAはまだ考慮していません。
+          </p>
+        </div>
+
+        <div class="panel result-card">
+          <h2>診断結果</h2>
+          <div id="result"></div>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const form = document.getElementById("diagnosisForm");
+      const result = document.getElementById("result");
+      const resetButton = document.getElementById("resetButton");
+
+      const airhostQuestion = document.getElementById("airhostQuestion");
+      const airbnbQuestion = document.getElementById("airbnbQuestion");
+      const bookingQuestion = document.getElementById("bookingQuestion");
+
+      const AIRBNB_MESSAGES_DIRECT = ["5分後", "3日前", "C/I前日", "C/O前", "C/O後"];
+      const AIRBNB_MESSAGES_WITH_AIRHOST = ["15分後", "3日前", "C/I前日"];
+      const BOOKING_MESSAGES = ["5分後", "C/I前日"];
+
+      function getValue(name) {
+        return form.querySelector(`input[name="${name}"]:checked`)?.value || "";
+      }
+
+      function setQuestionVisibility() {
+        const airhost = getValue("airhost");
+
+        if (!airhost) {
+          airbnbQuestion.classList.add("hidden");
+          bookingQuestion.classList.add("hidden");
+          clearField("airbnb");
+          clearField("booking");
+          return;
+        }
+
+        airbnbQuestion.classList.remove("hidden");
+
+        if (getValue("airbnb")) {
+          bookingQuestion.classList.remove("hidden");
+        } else {
+          bookingQuestion.classList.add("hidden");
+          clearField("booking");
+        }
+      }
+
+      function clearField(name) {
+        form.querySelectorAll(`input[name="${name}"]`).forEach((input) => {
+          input.checked = false;
+        });
+      }
+
+      function renderInitialState() {
+        result.innerHTML = `
+          <p class="empty">
+            連携状況を選んで「診断する」を押すと、登録すべき自動送信メッセージがここに表示されます。
+          </p>
+        `;
+      }
+
+      function renderConsultation(reason) {
+        result.innerHTML = `
+          <span class="result-status warn">要相談</span>
+          <p class="summary">${reason}</p>
+          <p class="empty">この組み合わせは現在のルールでは自動判定しないため、相談してください。</p>
+        `;
+      }
+
+      function renderPlatforms(summaryText, platforms) {
+        const platformHtml = platforms
+          .map(
+            (platform) => `
+              <section class="platform">
+                <h3>${platform.name}で登録するメッセージ</h3>
+                <ul>
+                  ${platform.messages.map((message) => `<li>${message}</li>`).join("")}
+                </ul>
+              </section>
+            `
+          )
+          .join("");
+
+        result.innerHTML = `
+          <span class="result-status">登録内容あり</span>
+          <p class="summary">${summaryText}</p>
+          ${platformHtml}
+        `;
+      }
+
+      function diagnose(airhost, airbnb, booking) {
+        if (airhost === "no" && airbnb === "no") {
+          return {
+            type: "consult",
+            reason: "Airhostなし・Airbnbなしのため、個別相談が必要です。",
+          };
+        }
+
+        if (airhost === "no" && airbnb === "yes" && booking === "no") {
+          return {
+            type: "result",
+            summary: "AirhostなしでAirbnbに連携しているため、Airbnb上で5つの自動送信メッセージを登録します。",
+            platforms: [
+              { name: "Airbnb", messages: AIRBNB_MESSAGES_DIRECT },
+            ],
+          };
+        }
+
+        if (airhost === "no" && airbnb === "yes" && booking === "yes") {
+          return {
+            type: "consult",
+            reason: "Airhostなし・Airbnbあり・Bookingありの組み合わせは、現時点で登録ルールが未定義です。",
+          };
+        }
+
+        if (airhost === "yes" && airbnb === "yes" && booking === "no") {
+          return {
+            type: "result",
+            summary: "AirhostとAirbnbが連携しているため、Airbnb上では3つの自動送信メッセージを登録します。",
+            platforms: [
+              { name: "Airbnb", messages: AIRBNB_MESSAGES_WITH_AIRHOST },
+            ],
+          };
+        }
+
+        if (airhost === "yes" && airbnb === "yes" && booking === "yes") {
+          return {
+            type: "result",
+            summary: "Airhost・Airbnb・Bookingがそろっているため、AirbnbとBookingの両方に登録が必要です。",
+            platforms: [
+              { name: "Airbnb", messages: AIRBNB_MESSAGES_WITH_AIRHOST },
+              { name: "Booking.com", messages: BOOKING_MESSAGES },
+            ],
+          };
+        }
+
+        if (airhost === "yes" && airbnb === "no" && booking === "yes") {
+          return {
+            type: "result",
+            summary: "Airhostあり・Airbnbなし・Bookingありのため、Booking.com上で2つの自動送信メッセージを登録します。",
+            platforms: [
+              { name: "Booking.com", messages: BOOKING_MESSAGES },
+            ],
+          };
+        }
+
+        if (airhost === "yes" && airbnb === "no" && booking === "no") {
+          return {
+            type: "consult",
+            reason: "Airhostあり・Airbnbなし・Bookingなしの組み合わせは、現時点で登録ルールが未定義です。",
+          };
+        }
+
+        return {
+          type: "consult",
+          reason: "必要な選択が不足しているか、ルールが未定義です。",
+        };
+      }
+
+      form.addEventListener("change", setQuestionVisibility);
+
+      form.addEventListener("submit", (event) => {
+        event.preventDefault();
+
+        const airhost = getValue("airhost");
+        const airbnb = getValue("airbnb");
+        const booking = getValue("booking");
+        const bookingIsVisible = !bookingQuestion.classList.contains("hidden");
+
+        if (!airhost || !airbnb || (bookingIsVisible && !booking)) {
+          renderConsultation("診断に必要な選択がまだ完了していません。");
+          return;
+        }
+
+        const diagnosis = diagnose(airhost, airbnb, booking);
+
+        if (diagnosis.type === "consult") {
+          renderConsultation(diagnosis.reason);
+          return;
+        }
+
+        renderPlatforms(diagnosis.summary, diagnosis.platforms);
+      });
+
+      resetButton.addEventListener("click", () => {
+        form.reset();
+        clearField("airhost");
+        clearField("airbnb");
+        clearField("booking");
+        airbnbQuestion.classList.add("hidden");
+        bookingQuestion.classList.add("hidden");
+        renderInitialState();
+      });
+
+      renderInitialState();
+    </script>
+  </body>
+</html>
